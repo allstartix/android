@@ -623,7 +623,8 @@ public class FileDisplayActivity extends FileActivity
         transaction.replace(R.id.left_fragment_container, fragment, TAG_LIST_OF_FILES);
         transaction.commit();
 
-        if (fragment instanceof UnifiedSearchFragment || fragment instanceof PreviewMediaFragment) {
+        if (fragment instanceof UnifiedSearchFragment || fragment instanceof PreviewMediaFragment || fragment instanceof PreviewTextFileFragment
+            || fragment instanceof PreviewTextStringFragment) {
             showSortListGroup(false);
         } else {
             showSortListGroup(true);
@@ -811,19 +812,10 @@ public class FileDisplayActivity extends FileActivity
         int itemId = item.getItemId();
 
         if (itemId == android.R.id.home) {
-            OCFile currentDir = getCurrentDir();
-            if (isDrawerOpen()) {
-                closeDrawer();
-            } else if (
-                currentDir != null && currentDir.getParentId() != 0 ||
-                    isSearchOpen()) {
-                onBackPressed();
-            } else if (getLeftFragment() instanceof FileDetailFragment ||
-                getLeftFragment() instanceof PreviewMediaFragment ||
-                getLeftFragment() instanceof UnifiedSearchFragment || getLeftFragment() instanceof PreviewPdfFragment) {
-                onBackPressed();
-            } else {
+            if (!isDrawerOpen() && !isSearchOpen() && isRoot(getCurrentDir()) && getLeftFragment() instanceof OCFileListFragment) {
                 openDrawer();
+            } else {
+                onBackPressed();
             }
         } else if (itemId == R.id.action_select_all) {
             OCFileListFragment fragment = getListOfFilesFragment();
@@ -1063,47 +1055,54 @@ public class FileDisplayActivity extends FileActivity
 
         final Fragment leftFragment = getLeftFragment();
 
-        if (leftFragment instanceof OCFileListFragment) {
+        if (isSearchOpen) {
+            resetSearchAction();
+        } else if (isDrawerOpen) {
+            super.onBackPressed();
+        } else if (leftFragment instanceof OCFileListFragment) {
             OCFileListFragment listOfFiles = (OCFileListFragment) leftFragment;
 
-            if (isSearchOpen && searchView != null) {
-                searchView.setQuery("", true);
-                searchView.onActionViewCollapsed();
-                searchView.clearFocus();
-
-                // Remove the list to the original state
-                listOfFiles.performSearch("", true);
-
-                hideSearchView(getCurrentDir());
-
-                setDrawerIndicatorEnabled(isDrawerIndicatorAvailable());
-            } else if (isDrawerOpen) {
-                // close drawer first
-                super.onBackPressed();
-            } else {
-                // all closed
-                OCFile currentDir = getCurrentDir();
-                if (currentDir == null || currentDir.getParentId() == FileDataStorageManager.ROOT_PARENT_ID) {
-                    finish();
-                    return;
-                }
-                listOfFiles.onBrowseUp();
-                setFile(listOfFiles.getCurrentFile());
-                listOfFiles.setFabVisible(true);
-                listOfFiles.registerFabListener();
-                showSortListGroup(true);
-                resetTitleBarAndScrolling();
-                setDrawerAllFiles();
+            // all closed
+            OCFile currentDir = getCurrentDir();
+            if (isRoot(currentDir)) {
+                finish();
+                return;
             }
-        } else if (leftFragment instanceof PreviewTextStringFragment) {
-            createMinFragments(null);
-        } else if (leftFragment instanceof PreviewPdfFragment) {
-            super.onBackPressed();
+            browseUp(listOfFiles);
         } else {
-            // pop back
-            resetScrolling(true);
-            hideSearchView(getCurrentDir());
-            showSortListGroup(true);
+            popBack();
+        }
+    }
+
+    private void popBack() {
+        // pop back
+        resetScrolling(true);
+        showSortListGroup(true);
+        super.onBackPressed();
+    }
+
+    private void browseUp(OCFileListFragment listOfFiles) {
+        listOfFiles.onBrowseUp();
+        setFile(listOfFiles.getCurrentFile());
+        listOfFiles.setFabVisible(true);
+        listOfFiles.registerFabListener();
+        showSortListGroup(true);
+        resetTitleBarAndScrolling();
+        setDrawerAllFiles();
+    }
+
+    private void resetSearchAction() {
+        Fragment leftFragment = getLeftFragment();
+        if (isSearchOpen() && searchView != null) {
+            searchView.setQuery("", true);
+            searchView.onActionViewCollapsed();
+            searchView.clearFocus();
+            if (isRoot(getCurrentDir()) && leftFragment instanceof OCFileListFragment) {
+                hideSearchView(getCurrentDir());
+                setDrawerIndicatorEnabled(isDrawerIndicatorAvailable());
+            }
+        }
+        if (leftFragment instanceof UnifiedSearchFragment) {
             super.onBackPressed();
         }
     }
@@ -1611,9 +1610,9 @@ public class FileDisplayActivity extends FileActivity
 
         Fragment detailFragment = FileDetailFragment.newInstance(file, currentUser, activeTab);
         setLeftFragment(detailFragment);
-
-        updateActionBarTitleAndHomeButton(file);
-        mDrawerToggle.setDrawerIndicatorEnabled(false);
+        configureToolbarForPreview(file);
+//        updateActionBarTitleAndHomeButton(file);
+//        mDrawerToggle.setDrawerIndicatorEnabled(false);
     }
 
     /**
@@ -2192,7 +2191,7 @@ public class FileDisplayActivity extends FileActivity
             return; // not reachable under normal conditions
         }
         if (showPreview && file.isDown() && !file.isDownloading() || streamMedia) {
-            configureToolbarForMediaPreview(file);
+            configureToolbarForPreview(file);
             Fragment mediaFragment = PreviewMediaFragment.newInstance(file, user.get(), startPlaybackPosition, autoplay);
             setLeftFragment(mediaFragment);
         } else {
@@ -2207,7 +2206,7 @@ public class FileDisplayActivity extends FileActivity
         }
     }
 
-    public void configureToolbarForMediaPreview(OCFile file) {
+    public void configureToolbarForPreview(OCFile file) {
         showSortListGroup(false);
         lockScrolling();
         super.updateActionBarTitleAndHomeButton(file);
@@ -2226,10 +2225,10 @@ public class FileDisplayActivity extends FileActivity
         }
         User user = optUser.get();
         if (showPreview) {
-            showSortListGroup(false);
+//            showSortListGroup(false);
             PreviewTextFileFragment fragment = PreviewTextFileFragment.create(user, file, searchOpen, searchQuery);
             setLeftFragment(fragment);
-            super.updateActionBarTitleAndHomeButton(file);
+            configureToolbarForPreview(file);
         } else {
             Intent previewIntent = new Intent();
             previewIntent.putExtra(EXTRA_FILE, file);
@@ -2247,14 +2246,15 @@ public class FileDisplayActivity extends FileActivity
      * @param folder {@link OCFile} to preview its rich workspace.
      */
     public void startRichWorkspacePreview(OCFile folder) {
-        showSortListGroup(false);
+//        showSortListGroup(false);
         Bundle args = new Bundle();
         args.putParcelable(EXTRA_FILE, folder);
+        configureToolbarForPreview(folder);
+        Log.d(Constant.LOG_TAG, "Rich Preview: " + folder);
         Fragment textPreviewFragment = Fragment.instantiate(getApplicationContext(),
                                                             PreviewTextStringFragment.class.getName(),
                                                             args);
         setLeftFragment(textPreviewFragment);
-        super.updateActionBarTitleAndHomeButton(folder);
     }
 
     public void startContactListFragment(OCFile file) {
@@ -2271,8 +2271,8 @@ public class FileDisplayActivity extends FileActivity
 
             setLeftFragment(pdfFragment);
 
-            updateActionBarTitleAndHomeButton(file);
-            showSortListGroup(false);
+//            showSortListGroup(false);
+            configureToolbarForPreview(file);
             mDrawerToggle.setDrawerIndicatorEnabled(false);
             setMainFabVisible(false);
         }
@@ -2290,9 +2290,9 @@ public class FileDisplayActivity extends FileActivity
         final User currentUser = getUser().orElseThrow(RuntimeException::new);
         Fragment detailFragment = FileDetailFragment.newInstance(file, parentFolder, currentUser);
         setLeftFragment(detailFragment);
+        configureToolbarForPreview(file);
         mWaitingToPreview = file;
         requestForDownload();
-        updateActionBarTitleAndHomeButton(file);
         setFile(file);
     }
 
@@ -2301,7 +2301,7 @@ public class FileDisplayActivity extends FileActivity
      * Opens EditImageActivity with given file loaded. If file is not available locally, it will be synced before
      * opening the image editor.
      *
-     * @param file      {@link OCFile} (image) to be loaded into image editor
+     * @param file {@link OCFile} (image) to be loaded into image editor
      */
     public void startImageEditor(OCFile file) {
         if (file.isDown()) {
@@ -2310,7 +2310,7 @@ public class FileDisplayActivity extends FileActivity
             startActivity(editImageIntent);
         } else {
             mWaitingToPreview = file;
-            requestForDownload(file,EditImageActivity.OPEN_IMAGE_EDITOR, getPackageName(),
+            requestForDownload(file, EditImageActivity.OPEN_IMAGE_EDITOR, getPackageName(),
                                this.getClass().getSimpleName());
             updateActionBarTitleAndHomeButton(file);
             setFile(file);
@@ -2654,4 +2654,5 @@ public class FileDisplayActivity extends FileActivity
             DisplayUtils.showSnackMessage(listOfFiles.getView(), message);
         }
     }
+
 }
