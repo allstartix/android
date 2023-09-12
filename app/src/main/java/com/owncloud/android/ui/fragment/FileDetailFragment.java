@@ -144,12 +144,12 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
 
     /**
      * Public factory method to create new FileDetailFragment instances.
-     *
+     * <p>
      * When 'fileToDetail' or 'ocAccount' are null, creates a dummy layout (to use when a file wasn't tapped before).
      *
-     * @param fileToDetail      An {@link OCFile} to show in the fragment
-     * @param user              Currently active user
-     *                          @param activeTab to be active tab
+     * @param fileToDetail An {@link OCFile} to show in the fragment
+     * @param user         Currently active user
+     * @param activeTab    to be active tab
      * @return New fragment with arguments set
      */
     public static FileDetailFragment newInstance(OCFile fileToDetail, User user, int activeTab) {
@@ -220,7 +220,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
             user = savedInstanceState.getParcelable(ARG_USER);
         }
 
-        binding = FileDetailsFragmentBinding.inflate(inflater,container,false);
+        binding = FileDetailsFragmentBinding.inflate(inflater, container, false);
         view = binding.getRoot();
 
         if (getFile() == null || user == null) {
@@ -370,8 +370,6 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
         super.onResume();
 
         if (toolbarActivity != null) {
-            toolbarActivity.showSortListGroup(false);
-
             if (previewLoaded) {
                 toolbarActivity.setPreviewImageVisibility(true);
             }
@@ -474,7 +472,8 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
     }
 
     /**
-     * Check if the fragment was created with an empty layout. An empty fragment can't show file details, must be replaced.
+     * Check if the fragment was created with an empty layout. An empty fragment can't show file details, must be
+     * replaced.
      *
      * @return True when the fragment was created with the empty layout.
      */
@@ -495,11 +494,11 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
 
     /**
      * Updates the view with all relevant details about that file.
-     *
+     * <p>
      * TODO Remove parameter when the transferring state of files is kept in database.
      *
-     * @param transferring Flag signaling if the file should be considered as downloading or uploading,
-     *                     although {@link FileDownloaderBinder#isDownloading(User, OCFile)}  and
+     * @param transferring Flag signaling if the file should be considered as downloading or uploading, although
+     *                     {@link FileDownloaderBinder#isDownloading(User, OCFile)}  and
      *                     {@link FileUploaderBinder#isUploading(User, OCFile)} return false.
      * @param refresh      If 'true', try to refresh the whole file from the database
      */
@@ -534,8 +533,8 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
             FileDownloaderBinder downloaderBinder = containerActivity.getFileDownloaderBinder();
             FileUploaderBinder uploaderBinder = containerActivity.getFileUploaderBinder();
             if (transferring
-                    || (downloaderBinder != null && downloaderBinder.isDownloading(user, file))
-                    || (uploaderBinder != null && uploaderBinder.isUploading(user, file))) {
+                || (downloaderBinder != null && downloaderBinder.isDownloading(user, file))
+                || (uploaderBinder != null && uploaderBinder.isUploading(user, file))) {
                 setButtonsForTransferring();
 
             } else if (file.isDown()) {
@@ -564,7 +563,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
             binding.lastModificationTimestamp.setText(DisplayUtils.unixTimeToHumanReadable(file.getModificationTimestamp()));
         } else {
             binding.lastModificationTimestamp.setText(DisplayUtils.getRelativeTimestamp(getContext(),
-                                                                            file.getModificationTimestamp()));
+                                                                                        file.getModificationTimestamp()));
         }
     }
 
@@ -573,8 +572,8 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
             binding.favorite.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_star, null));
         } else {
             binding.favorite.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
-                                                                      R.drawable.ic_star_outline,
-                                                                      null));
+                                                                          R.drawable.ic_star_outline,
+                                                                          null));
         }
     }
 
@@ -615,7 +614,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
 
                 // generate new resized image
                 if (ThumbnailsCacheManager.cancelPotentialThumbnailWork(getFile(), toolbarActivity.getPreviewImageView()) &&
-                        containerActivity.getStorageManager() != null) {
+                    containerActivity.getStorageManager() != null) {
                     final ThumbnailsCacheManager.ResizedImageGenerationTask task =
                         new ThumbnailsCacheManager.ResizedImageGenerationTask(this,
                                                                               toolbarActivity.getPreviewImageView(),
@@ -632,11 +631,11 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
                     }
 
                     final ThumbnailsCacheManager.AsyncResizedImageDrawable asyncDrawable =
-                            new ThumbnailsCacheManager.AsyncResizedImageDrawable(
-                                    MainApp.getAppContext().getResources(),
-                                    resizedImage,
-                                    task
-                            );
+                        new ThumbnailsCacheManager.AsyncResizedImageDrawable(
+                            MainApp.getAppContext().getResources(),
+                            resizedImage,
+                            task
+                        );
 
                     toolbarActivity.setPreviewImageDrawable(asyncDrawable);
                     previewLoaded = true;
@@ -661,8 +660,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
             //if (getFile().isDownloading()) {
             if (downloaderBinder != null && downloaderBinder.isDownloading(user, getFile())) {
                 binding.progressText.setText(R.string.downloader_download_in_progress_ticker);
-            }
-            else {
+            } else {
                 if (uploaderBinder != null && uploaderBinder.isUploading(user, getFile())) {
                     binding.progressText.setText(R.string.uploader_upload_in_progress_ticker);
                 }
@@ -694,11 +692,11 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
         if (progressListener != null) {
             if (containerActivity.getFileDownloaderBinder() != null) {
                 containerActivity.getFileDownloaderBinder().
-                        addDatatransferProgressListener(progressListener, getFile());
+                    addDatatransferProgressListener(progressListener, getFile());
             }
             if (containerActivity.getFileUploaderBinder() != null) {
                 containerActivity.getFileUploaderBinder().
-                        addDatatransferProgressListener(progressListener, user, getFile());
+                    addDatatransferProgressListener(progressListener, user, getFile());
             }
         } else {
             Log_OC.d(TAG, "progressListener == null");
@@ -709,11 +707,11 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
         if (progressListener != null) {
             if (containerActivity.getFileDownloaderBinder() != null) {
                 containerActivity.getFileDownloaderBinder().
-                        removeDatatransferProgressListener(progressListener, getFile());
+                    removeDatatransferProgressListener(progressListener, getFile());
             }
             if (containerActivity.getFileUploaderBinder() != null) {
                 containerActivity.getFileUploaderBinder().
-                        removeDatatransferProgressListener(progressListener, user, getFile());
+                    removeDatatransferProgressListener(progressListener, user, getFile());
             }
         }
     }
@@ -730,6 +728,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
 
     /**
      * open the sharing process fragment for creating new share
+     *
      * @param shareeName
      * @param shareType
      */
@@ -746,6 +745,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
 
     /**
      * method will handle the views need to be hidden when sharing process fragment shows
+     *
      * @param isFragmentReplaced
      */
     public void showHideFragmentView(boolean isFragmentReplaced) {
@@ -762,6 +762,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
 
     /**
      * open the new sharing screen process to modify the created share
+     *
      * @param share
      * @param screenTypePermission
      * @param isReshareShown
@@ -813,7 +814,7 @@ public class FileDetailFragment extends FileFragment implements OnClickListener,
         @Override
         public void onTransferProgress(long progressRate, long totalTransferredSoFar,
                                        long totalToTransfer, String filename) {
-            int percent = (int)(100.0*((double)totalTransferredSoFar)/((double)totalToTransfer));
+            int percent = (int) (100.0 * ((double) totalTransferredSoFar) / ((double) totalToTransfer));
             if (percent != lastPercent) {
                 ProgressBar pb = progressBarReference.get();
                 if (pb != null) {
