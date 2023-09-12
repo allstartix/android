@@ -1049,6 +1049,11 @@ public class FileDisplayActivity extends FileActivity
         }
     }
 
+    /**
+     * Use this method when want to pop the fragment on back press. It resets Scrolling (See
+     * {@link #resetScrolling(boolean) with true} and pop the visibility for sortListGroup (See
+     * {@link #setSortListGroup(boolean, boolean)}. At last call to super.onBackPressed()
+     */
     private void popBack() {
         // pop back fragment
         resetScrolling(true);
@@ -1065,6 +1070,9 @@ public class FileDisplayActivity extends FileActivity
         setDrawerAllFiles();
     }
 
+    /**
+     * It resets the Search Action (call when search is open)
+     */
     private void resetSearchAction() {
         Fragment leftFragment = getLeftFragment();
         if (isSearchOpen() && searchView != null) {
@@ -2605,11 +2613,20 @@ public class FileDisplayActivity extends FileActivity
         }
     }
 
+    /**
+     * Use this method to set the visibility of SortListGroup while going to another fragment/view (which needs
+     * different visibility) It internally sets the visibility as well as save the previous one in the stack so that on
+     * going back it pops out the correct visibility. Also see {@link #popSortListGroupVisibility()}
+     */
     private void setSortListGroup(boolean currentListGroupVisibility, boolean show) {
         previousSortGroupState.push(currentListGroupVisibility);
         showSortListGroup(show);
     }
 
+    /**
+     * Use this method to set the visibility of SortListGroup when coming back from a view/fragment (which changed the
+     * visibility earlier using {@link #setSortListGroup(boolean, boolean)}
+     */
     private void popSortListGroupVisibility() {
         boolean popped = previousSortGroupState.pop();
         showSortListGroup(popped);
