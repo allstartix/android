@@ -107,7 +107,6 @@ class FilesUploadWorker(
         val user = userAccountManager.getUser(accountName)
 
         val factory = OwnCloudClientManagerFactory.getDefaultSingleton()
-        
 
         for (upload in uploads) {
             // create upload file operation
@@ -118,13 +117,13 @@ class FilesUploadWorker(
 
                     if (userInfo.isSuccess) {
                         val free = userInfo.resultData.quota?.free ?: -1L
-                        
+
                         if (free == -1L || free <= upload.fileSize) {
                             continue
                         }
                     }
                 }
-                
+
                 val uploadFileOperation = createUploadFileOperation(upload, user.get())
 
                 val result = upload(uploadFileOperation, user.get())
