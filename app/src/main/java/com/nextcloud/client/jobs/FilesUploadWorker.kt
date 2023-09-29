@@ -43,6 +43,7 @@ import com.owncloud.android.datamodel.FileDataStorageManager
 import com.owncloud.android.datamodel.ThumbnailsCacheManager
 import com.owncloud.android.datamodel.UploadsStorageManager
 import com.owncloud.android.db.OCUpload
+import com.owncloud.android.db.UploadResult
 import com.owncloud.android.lib.common.OwnCloudAccount
 import com.owncloud.android.lib.common.OwnCloudClientManagerFactory
 import com.owncloud.android.lib.common.network.OnDatatransferProgressListener
@@ -50,6 +51,7 @@ import com.owncloud.android.lib.common.operations.RemoteOperationResult
 import com.owncloud.android.lib.common.operations.RemoteOperationResult.ResultCode
 import com.owncloud.android.lib.common.utils.Log_OC
 import com.owncloud.android.lib.resources.files.FileUtils
+import com.owncloud.android.lib.resources.users.GetUserInfoRemoteOperation
 import com.owncloud.android.operations.UploadFileOperation
 import com.owncloud.android.ui.activity.ConflictsResolveActivity
 import com.owncloud.android.ui.activity.UploadListActivity
@@ -104,9 +106,25 @@ class FilesUploadWorker(
     private fun handlePendingUploads(uploads: List<OCUpload>, accountName: String) {
         val user = userAccountManager.getUser(accountName)
 
+        val factory = OwnCloudClientManagerFactory.getDefaultSingleton()
+        
+
         for (upload in uploads) {
             // create upload file operation
             if (user.isPresent) {
+                if (upload.lastResult == UploadResult.QUOTA_EXCEEDED) {
+                    val client = factory.getNextcloudClientFor(user.get().toOwnCloudAccount(), context)
+                    val userInfo = GetUserInfoRemoteOperation().execute(client)
+
+                    if (userInfo.isSuccess) {
+                        val free = userInfo.resultData.quota?.free ?: -1L
+                        
+                        if (free == -1L || free <= upload.fileSize) {
+                            continue
+                        }
+                    }
+                }
+                
                 val uploadFileOperation = createUploadFileOperation(upload, user.get())
 
                 val result = upload(uploadFileOperation, user.get())
