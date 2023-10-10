@@ -111,6 +111,7 @@ class FilesUploadWorker(
         for (upload in uploads) {
             // create upload file operation
             if (user.isPresent) {
+                // TODO if any pending upload has quota exceeded or user disabled, try this before starting all!
                 if (upload.lastResult == UploadResult.QUOTA_EXCEEDED) {
                     val client = factory.getNextcloudClientFor(user.get().toOwnCloudAccount(), context)
                     val userInfo = GetUserInfoRemoteOperation().execute(client)
